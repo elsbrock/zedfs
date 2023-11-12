@@ -1,9 +1,9 @@
 let
   user = rec {
-    name = "rpaulson";
+    name = "else";
     value = {
-      password = "rp";
-      extraGroups = [ "networkmanager" "wheel" ];
+      password = "else";
+      extraGroups = [ "wheel" ];
       home = "/home/${user.name}";
       isNormalUser = true;
     };

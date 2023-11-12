@@ -1,0 +1,48 @@
+version: '3'
+
+tasks:
+  zpool-create:
+    cmds:
+      - fallocate -l 1G vzfs.img
+      - sudo zpool create -m none zedfs-pool $(pwd)/vzfs.img
+  zpool-destroy:
+    cmd: sudo zpool destroy zedfs-pool
+  zfs-create:
+    cmds:
+      - sudo zfs create -p zedfs-pool/users
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-0
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-1
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-2
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-3
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-4
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-5
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-6
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-7
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-8
+      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-9
+  zfs-destroy:
+    cmd: sudo zfs destroy -r zedfs-pool/users
+  
+  zfs:
+    deps:
+      - zpool-create
+      - zfs-create
+
+  debootstrap:
+    cmd: sudo debootstrap --arch amd64 jammy ubuntu2204/ http://archive.ubuntu.com/ubuntu/
+
+  systemd-nspawn-get-image:
+    cmds:
+      - wget -nc https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64-root.tar.xz
+      - machinectl import-tar --verify=no ubuntu-22.04-server-cloudimg-amd64-root.tar.xz jammy-server-cloudimg-amd64-root
+
+  zedfs-user:
+    deps:
+      - zfs
+      - systemd-nspawn-get-image
+    cmd: >
+      sudo systemd-nspawn -b --resolv-conf=replace-stub \
+        --network-veth -U --settings=override \
+        --bind-ro=$(pwd)/cloud-init/ds-identify.cfg:/etc/cloud/ds-identify.cfg \
+        --bind-ro=$(pwd)/cloud-init/nocloud:/var/lib/cloud/seed/nocloud \
+        -M jammy-server-cloudimg-amd64-root
