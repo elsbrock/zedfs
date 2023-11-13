@@ -57,9 +57,11 @@ tasks:
       sudo qemu-system-x86_64 -M microvm,x-option-roms=off,isa-serial=off,rtc=off \
         -no-acpi -enable-kvm -cpu host -nodefaults -no-user-config -nographic \
         -no-reboot -device virtio-serial-device -chardev stdio,id=virtiocon0 \
+        -kernel output/images/bzImage -append "console=hvc0 root=/dev/vda rw acpi=off reboot=t panic=-1" \
         -device virtconsole,chardev=virtiocon0 \
         -netdev tap,id=tap0,script=no,downscript=no \
         -device virtio-net-device,netdev=tap0 \
         -drive id=root,file=output/images/rootfs.squashfs,format=raw,if=none \
-        -device virtio-blk-device,drive=root -kernel output/images/bzImage \
-        -append "console=hvc0 root=/dev/vda rw acpi=off reboot=t panic=-1"
+        -device virtio-blk-device,drive=root \
+        -drive id=zfs,file=/dev/zvol/zedfs-pool/users/zedfs-user-0,format=raw,if=none \
+        -device virtio-blk-device,drive=zfs
