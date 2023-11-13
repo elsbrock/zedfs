@@ -46,3 +46,18 @@ tasks:
         --bind-ro=$(pwd)/cloud-init/ds-identify.cfg:/etc/cloud/ds-identify.cfg \
         --bind-ro=$(pwd)/cloud-init/nocloud:/var/lib/cloud/seed/nocloud \
         -M jammy-server-cloudimg-amd64-root
+
+  buildroot:
+    dir: buildroot
+    cmds:
+      - make BR2_DEFCONFIG=../buildroot-external/configs/zedfs_defconfig O=../output BR2_EXTERNAL=../buildroot-external {{.CLI_ARGS}}
+
+  buildroot-qemu:
+    cmd: >
+      qemu-system-x86_64 -M microvm,x-option-roms=off,isa-serial=off,rtc=off \
+        -no-acpi -enable-kvm -cpu host -nodefaults -no-user-config -nographic \
+        -no-reboot -device virtio-serial-device -chardev stdio,id=virtiocon0 \
+        -device virtconsole,chardev=virtiocon0 \
+        -drive id=root,file=output/images/rootfs.squashfs,format=raw,if=none \
+        -device virtio-blk-device,drive=root -kernel output/images/bzImage \
+        -append "console=hvc0 root=/dev/vda rw acpi=off reboot=t panic=-1"

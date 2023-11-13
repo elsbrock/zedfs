@@ -1,3 +1,4 @@
 vzfs.img
 *.tar.[gx]z
-ubuntu2204
+ubuntu2204/
+output/
