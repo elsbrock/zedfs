@@ -5,23 +5,23 @@ tasks:
     cmds:
       - fallocate -l 1G vzfs.img
       - sudo zpool create -m none zedfs-pool $(pwd)/vzfs.img
+    status:
+      - sudo zpool status zedfs-pool
   zpool-destroy:
     cmd: sudo zpool destroy zedfs-pool
+
   zfs-create:
+    deps:
+      - zpool-create
     cmds:
       - sudo zfs create -p zedfs-pool/users
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-0
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-1
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-2
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-3
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-4
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-5
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-6
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-7
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-8
-      - sudo zfs create -p -V 10M zedfs-pool/users/zedfs-user-9
+      - sudo zfs create -p -V 400M zedfs-pool/users/zedfs-user-0
+      - sudo zfs create -p -V 400M zedfs-pool/users/zedfs-user-1
+    status:
+      - sudo zfs list zedfs-pool/users
+
   zfs-destroy:
-    cmd: sudo zfs destroy -r zedfs-pool/users
+    cmd: sudo zfs destroy -r zedfs-pool
   
   zfs:
     deps:
@@ -30,6 +30,8 @@ tasks:
 
   debootstrap:
     cmd: sudo debootstrap --arch amd64 jammy ubuntu2204/ http://archive.ubuntu.com/ubuntu/
+    sources:
+      - test -d ubuntu2204
 
   systemd-nspawn-get-image:
     cmds:
@@ -51,8 +53,13 @@ tasks:
     dir: buildroot
     cmds:
       - make BR2_DEFCONFIG=../buildroot-external/configs/zedfs_defconfig O=../output BR2_EXTERNAL=../buildroot-external {{.CLI_ARGS}}
+    sources:
+      - buildroot-external/**/*
 
   buildroot-qemu:
+    deps:
+      - buildroot
+      - zfs
     cmd: >
       sudo qemu-system-x86_64 -M microvm,x-option-roms=off,isa-serial=off,rtc=off \
         -no-acpi -enable-kvm -cpu host -nodefaults -no-user-config -nographic \
